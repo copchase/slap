@@ -1,0 +1,46 @@
+on:
+  push:
+    branches-ignore:
+      - main
+jobs:
+  build-deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+          architecture: "x64"
+
+      - name: Install Python Dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest
+
+      - name: Package
+        run: |
+          pip3 install -r requirements.txt -t .
+          zip -8 -r nightbot-proxy.zip . -x ".git*"
+
+      - name: Setup AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload to S3
+        run: |
+          aws s3 cp nightbot-proxy.zip s3://packages-${{ secrets.AWS_ACCOUNT_ID }}/nightbot-proxy/stage/nightbot-proxy.zip
+      
+      - name: Update Lambda
+        run: |
+          aws lambda update-function-code --function-name="stage-nightbot-proxy" --s3-bucket="packages-${{ secrets.AWS_ACCOUNT_ID }}" --s3-key="nightbot-proxy/stage/nightbot-proxy.zip"
