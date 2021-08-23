@@ -1,12 +1,19 @@
 import requests
 from logzero import logger
+import json
 
-BASE_ENDPOINT = "https://api.twitch.tv/helix"
+import util
+
+HELIX_ENDPOINT = "https://api.twitch.tv/helix"
+TMI_ENDPOINT = "https://tmi.twitch.tv"
 
 
 def get_user_id(username: str) -> str:
     path = "/users"
-    response = requests.get(BASE_ENDPOINT + path, params={"login": username})
+    token = util.get_access_token()
+    params = {"login": username}
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(HELIX_ENDPOINT + path, params=params, headers=headers)
     response.raise_for_status()
     data = response.json()["data"]
     if not data:
@@ -14,3 +21,22 @@ def get_user_id(username: str) -> str:
         return None
 
     return data["id"]
+
+
+def send_message(response_url: str, message: str) -> None:
+    request_body = {"message": message}
+    requests.post(response_url, None, request_body)
+
+
+def is_user_online(channel: str, username: str) -> bool:
+    endpoint = f"{TMI_ENDPOINT}/group/user/{channel}/chatters"
+    response = requests.get(endpoint)
+    response.raise_for_status()
+    chat_info = response.json()["chatters"]
+
+    for _, v in chat_info:
+        found_idx = util.find_idx(v, username)
+        if found_idx != -1:
+            return True
+
+    return False

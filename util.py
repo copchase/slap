@@ -1,6 +1,7 @@
 import boto3
 import json
 import os
+import bisect
 
 def header_to_dict(header: str) -> dict:
     output = {}
@@ -26,7 +27,14 @@ def get_access_token() -> str:
     )
 
     token = response["Payload"].read().decode("utf-8")
-    if token == " ":
+    if not token:
         raise RuntimeError("Could not retrieve access token")
 
     return token
+
+
+def find_idx(lst: list, value) -> int:
+    idx = bisect.bisect(lst, value)
+    if idx < len(lst) and lst[idx] == value:
+        return idx
+    return -1
