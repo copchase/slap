@@ -10,7 +10,7 @@ TMI_ENDPOINT = "https://tmi.twitch.tv"
 
 def get_user_info(username: str) -> dict:
     path = "/users"
-    token = util.get_access_token()
+    token = util.get_access_token().strip("\"")
     params = {"login": username}
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.get(HELIX_ENDPOINT + path, params=params, headers=headers)

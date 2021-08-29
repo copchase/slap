@@ -27,6 +27,7 @@ def get_access_token() -> str:
     )
 
     token = response["Payload"].read().decode("utf-8")
+    print(token)
     if not token:
         raise RuntimeError("Could not retrieve access token")
 

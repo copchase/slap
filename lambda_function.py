@@ -5,7 +5,7 @@ import slapyou
 def lambda_handler(event: dict, context):
     response_url, channel_info, caller_info, target_name = get_operating_info(event)
 
-    if target_name is None:
+    if target_name is None or target_name == "null":
         response_message = "A target was not specified"
         twitch.send_message(response_url, response_message)
         return
