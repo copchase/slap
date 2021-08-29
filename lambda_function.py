@@ -3,6 +3,7 @@ import twitch
 import slapyou
 
 def lambda_handler(event: dict, context):
+    print(event)
     response_url, channel_info, caller_info, target_name = get_operating_info(event)
 
     if target_name is None:
@@ -21,6 +22,8 @@ def lambda_handler(event: dict, context):
         return
 
     slap_result = slapyou.slap(caller_id, target_id, channel_id)
+    for msg in slap_result:
+        twitch.send_message(response_url, msg)
 
 
 def get_operating_info(event: dict) -> (str, str, str, str):
