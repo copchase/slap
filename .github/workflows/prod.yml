@@ -28,7 +28,7 @@ jobs:
       - name: Package
         run: |
           pip3 install -r requirements.txt -t .
-          zip -8 -r nightbot-proxy.zip . -x ".git*"
+          zip -8 -r slapyou.zip . -x ".git*"
 
       - name: Setup AWS CLI
         uses: aws-actions/configure-aws-credentials@v1
@@ -39,8 +39,8 @@ jobs:
 
       - name: Upload to S3
         run: |
-          aws s3 cp nightbot-proxy.zip s3://packages-${{ secrets.AWS_ACCOUNT_ID }}/nightbot-proxy/prod/nightbot-proxy.zip
+          aws s3 cp slapyou.zip s3://packages-${{ secrets.AWS_ACCOUNT_ID }}/slapyou/prod/slapyou.zip
       
       - name: Update Lambda
         run: |
-          aws lambda update-function-code --function-name="prod-nightbot-proxy" --s3-bucket="packages-${{ secrets.AWS_ACCOUNT_ID }}" --s3-key="nightbot-proxy/prod/nightbot-proxy.zip"
+          aws lambda update-function-code --function-name="prod-slapyou" --s3-bucket="packages-${{ secrets.AWS_ACCOUNT_ID }}" --s3-key="slapyou/prod/slapyou.zip"
