@@ -27,6 +27,12 @@ def lambda_handler(event: dict, context):
     channel_id = channel_info["providerId"]
     channel_name = channel_info["name"]
 
+    target_name = target_name.lower()
+    if target_name == "nightbot" and caller_info["userLevel"] != "owner":
+        response_message = "You can't slap me :)"
+        twitch.send_message(response_url, response_message)
+        return None
+
     logger.info(f"""{caller_info["displayName"]} is trying to slap {target_name})""")
 
     if util.is_target_self(caller_id, target_id):
