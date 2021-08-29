@@ -21,7 +21,7 @@ def get_user_info(username: str) -> dict:
     print(headers)
     response = requests.get(HELIX_ENDPOINT + path, params=params, headers=headers)
     response.raise_for_status()
-    data = response.json()["data"]
+    data = response.json()["data"][0]
     if not data:
         logger.warning(f"User {username} not found")
         return None
