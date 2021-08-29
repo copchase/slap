@@ -23,6 +23,7 @@ def get_item(key: Any) -> dict:
 def update_item(key: Any, attributes: dict) -> bool:
     counter = 1
     key_dict = {"userId": convert_to_ddbav(key)}
+    attributes.pop("userId", "")
     attr_dict = {}
     for k in attributes:
         attr_dict[k] = convert_to_ddbav(attributes[k])
@@ -43,7 +44,7 @@ def update_item(key: Any, attributes: dict) -> bool:
 # Iteration on a dict is insertion order based
 # Returns of tuple of update expression, EAN, and EAV
 # EAN = Expression Attribute Names
-# EAV = xpression Attribute Values
+# EAV = Expression Attribute Values
 def make_update_item_assets(attributes: dict) -> (str, dict, dict):
     counter = 1
     exp_frag = []

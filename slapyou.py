@@ -6,11 +6,6 @@ import emote
 # How can she slap?
 
 
-CURRENCY_NAME = {
-    "30080840": "OddCoin",
-    "63560156": "gold"
-}
-
 def slap(caller_info: dict, target_info: dict, channel_id: str) -> list:
     output_str = []
 
@@ -25,48 +20,55 @@ def slap(caller_info: dict, target_info: dict, channel_id: str) -> list:
     caller_currency = get_user_currency(caller_obj, channel_id)
     critical = roll(0.0625)
 
-    channel_currency = CURRENCY_NAME.get(channel_id, "EXP")
-
     if roll(get_chance_from_currency(caller_currency)):
-        target_obj = dynamodb_api.get_item(target_info)
+        target_obj = dynamodb_api.get_item(target_id)
+        target_currency = get_user_currency(target_obj, channel_id)
         stolen_amount, target_died = steal(caller_obj, target_obj, channel_id, critical)
         dynamodb_api.update_item(target_id, target_obj)
         if critical:
-            output_str.append(f"""{caller_name} slaps {target_name} and critically hits, gaining {stolen_amount} {channel_currency} {emote.get_positive_emote()}!""")
+            output_str.append(f"{caller_name} ({caller_currency} HP) slaps {target_name} ({target_currency} HP) and critically hits, taking {stolen_amount} HP {emote.get_positive_emote()}!")
         else:
-            output_str.append(f"""{caller_name} slaps {target_name} and gains {stolen_amount} {channel_currency}!""")
+            output_str.append(f"{caller_name} ({caller_currency} HP) slaps {target_name} ({target_currency} HP) and took {stolen_amount} HP.")
 
         if target_died:
-            output_str.append(f"""{target_name} has gone bankrupt! Your welfare check for 1 {channel_currency} has arrived in the mail PepeHands""")
+            output_str[0] += (f" {target_name} has died from the battle PepeHands")
+            output_str.append(f"{target_name} has respawned with 1 HP FeelsGoodMan")
     elif critical:
-        output_str.append(f"""{caller_name} slaps themselves in confusion, losing all but 1 {channel_currency}! {emote.get_negative_emote()}""")
+        output_str.append(f"{caller_name} slaps themselves in confusion and dies {emote.get_negative_emote()} !")
+        output_str.append(f"{caller_name}, you have respawned with 1 HP AngelThump")
         set_user_currency(caller_obj, channel_id, 1)
     else:
         loss_amount = loss(caller_obj, channel_id)
-        output_str.append(f"""{caller_name} fails to slap {target_name} and loses {loss_amount} {channel_currency}!""")
+        if loss_amount == 0:
+            output_str.append(f"{caller_name} tripped and died trying to slap {target_name} {emote.get_negative_emote()}")
+            output_str.append(f"{caller_name} has respawned with 1 HP AngelThump . Try aiming better next time PepeLaugh")
+        else:
+            output_str.append(f"{caller_name} ({caller_currency}) fails to slap {target_name} and loses {loss_amount} HP")
 
     dynamodb_api.update_item(caller_id, caller_obj)
     return output_str
 
 
-def steal(caller_obj: dict, target_obj: dict, channel_id: str, critical: bool, output_str: list) -> (int, bool):
+def steal(caller_obj: dict, target_obj: dict, channel_id: str, critical: bool) -> (int, bool):
     caller_currency = get_user_currency(caller_obj, channel_id)
     target_currency = get_user_currency(target_obj, channel_id)
     percentage = random.uniform(0.05 + critical * 0.245, 0.35 + critical * 0.35)
     stolen_amount = max(1, round(percentage * target_currency))
-    set_user_currency(caller_obj, caller_currency + stolen_amount)
+    set_user_currency(caller_obj, channel_id, caller_currency + stolen_amount)
 
     target_died = target_currency - stolen_amount < 1
     if target_died:
         set_user_currency(target_obj, channel_id, 1)
     else:
-        set_user_currency(target_obj, target_currency - stolen_amount)
+        set_user_currency(target_obj, channel_id, target_currency - stolen_amount)
 
     return stolen_amount, target_died
 
 
 def loss(caller_obj: dict, channel_id: str) -> int:
     caller_currency = get_user_currency(caller_obj, channel_id)
+    if caller_currency == 1:
+        return 0
     percentage = random.uniform(0.1, 0.4)
     loss_amount = max(1, round(percentage * caller_currency))
     set_user_currency(caller_obj, channel_id, caller_currency - loss_amount)

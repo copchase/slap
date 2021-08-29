@@ -1,8 +1,14 @@
-import util
-import twitch
+import time
+
 import slapyou
+import twitch
+import util
+
 
 def lambda_handler(event: dict, context):
+    if "warmup" in event:
+        return
+
     response_url, channel_info, caller_info, target_name = get_operating_info(event)
 
     if target_name is None or target_name == "null":
@@ -24,6 +30,7 @@ def lambda_handler(event: dict, context):
     slap_result = slapyou.slap(caller_info, target_info, channel_id)
     for msg in slap_result:
         twitch.send_message(response_url, msg)
+        time.sleep(5.5)
 
 
 def get_operating_info(event: dict) -> (str, str, str, str):
