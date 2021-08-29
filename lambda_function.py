@@ -49,7 +49,8 @@ def lambda_handler(event: dict, context):
         return None
 
     slap_result = slapyou.slap(caller_info, target_info, channel_id)
-    for msg in slap_result:
+    while len(slap_result) > 0:
+        msg = slap_result.pop(0)
         twitch.send_message(response_url, msg)
         time.sleep(5.5)
 
