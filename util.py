@@ -34,7 +34,7 @@ def get_access_token() -> str:
 
 
 def find_idx(lst: list, value) -> int:
-    idx = bisect.bisect(lst, value)
+    idx = bisect.bisect_left(lst, value)
     if idx < len(lst) and lst[idx] == value:
         return idx
     return -1
