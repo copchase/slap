@@ -26,7 +26,7 @@ def slap(caller_info: dict, target_info: dict, channel_id: str) -> list:
         stolen_amount, target_died = steal(caller_obj, target_obj, channel_id, critical)
         dynamodb_api.update_item(target_id, target_obj)
         if critical:
-            output_str.append(f"{caller_name} ({caller_currency} HP) slaps {target_name} ({target_currency} HP) and critically hits, taking {stolen_amount} HP {emote.get_positive_emote()}!")
+            output_str.append(f"{caller_name} ({caller_currency} HP) slaps {target_name} ({target_currency} HP) and critically hits, taking {stolen_amount} HP {emote.get_positive_emote()} !")
         else:
             output_str.append(f"{caller_name} ({caller_currency} HP) slaps {target_name} ({target_currency} HP) and took {stolen_amount} HP.")
 
