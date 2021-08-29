@@ -8,7 +8,7 @@ HELIX_ENDPOINT = "https://api.twitch.tv/helix"
 TMI_ENDPOINT = "https://tmi.twitch.tv"
 
 
-def get_user_id(username: str) -> str:
+def get_user_info(username: str) -> dict:
     path = "/users"
     token = util.get_access_token()
     params = {"login": username}
@@ -20,7 +20,10 @@ def get_user_id(username: str) -> str:
         logger.warning(f"User {username} not found")
         return None
 
-    return data["id"]
+    data["displayName"] = data.pop("display_name")
+    data["providerId"] = data.pop("id")
+    data["name"] = data.pop("login")
+    return data
 
 
 def send_message(response_url: str, message: str) -> None:

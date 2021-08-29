@@ -13,8 +13,8 @@ def header_to_dict(header: str) -> dict:
     return output
 
 
-def is_oddone(username: str) -> bool:
-    return True
+def is_target_channel_owner(target_info: dict, channel_info: dict) -> bool:
+    return target_info["providerId"] == channel_info["providerId"]
 
 
 def get_access_token() -> str:
