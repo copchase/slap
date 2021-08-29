@@ -14,13 +14,14 @@ def lambda_handler(event: dict, context):
     target_info = twitch.get_user_info(target_name)
     target_id = target_info["providerId"]
     channel_id = channel_info["providerId"]
+    channel_name = channel_info["name"]
 
-    if not twitch.is_user_online(channel_id, target_name):
+    if not twitch.is_user_online(channel_name, target_name):
         response_message = f"User {target_name} is currently not in chat"
         twitch.send_message(response_url, response_message)
         return
 
-    slap_result = slapyou.slap(caller_id, target_id, channel_id)
+    slap_result = slapyou.slap(caller_info, target_info, channel_id)
     for msg in slap_result:
         twitch.send_message(response_url, msg)
 

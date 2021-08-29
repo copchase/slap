@@ -58,7 +58,7 @@ def steal(caller_obj: dict, target_obj: dict, channel_id: str, critical: bool, o
 
     target_died = target_currency - stolen_amount < 1
     if target_died:
-        set_user_currency(target_obj, 1)
+        set_user_currency(target_obj, channel_id, 1)
     else:
         set_user_currency(target_obj, target_currency - stolen_amount)
 
@@ -69,7 +69,7 @@ def loss(caller_obj: dict, channel_id: str) -> int:
     caller_currency = get_user_currency(caller_obj, channel_id)
     percentage = random.uniform(0.1, 0.4)
     loss_amount = max(1, round(percentage * caller_currency))
-    set_user_currency(caller_obj, caller_currency - loss_amount)
+    set_user_currency(caller_obj, channel_id, caller_currency - loss_amount)
     return loss_amount
 
 

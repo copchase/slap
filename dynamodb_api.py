@@ -9,7 +9,7 @@ DDB_CLIENT = boto3.client("dynamodb")
 DDB_TABLE = os.environ.get("SLAPYOU_TABLE")
 
 def get_item(key: Any) -> dict:
-    key_dict = convert_to_ddbav(key)
+    key_dict = {"userId": convert_to_ddbav(key)}
     result = DDB_CLIENT.get_item(TableName=DDB_TABLE, Key=key_dict)
     ddbav_attr = result.get("Item", {})
     python_attr = {}
@@ -22,8 +22,11 @@ def get_item(key: Any) -> dict:
 
 def update_item(key: Any, attributes: dict) -> bool:
     counter = 1
-    key_dict = convert_to_ddbav(key)
-    attr_dict = convert_to_ddbav(attributes)
+    key_dict = {"userId": convert_to_ddbav(key)}
+    attr_dict = {}
+    for k in attributes:
+        attr_dict[k] = convert_to_ddbav(attributes[k])
+
     update_exp, ean, eav = make_update_item_assets(attributes)
     DDB_CLIENT.update_item(
         TableName=DDB_TABLE,
