@@ -18,7 +18,6 @@ def get_user_info(username: str) -> dict:
         "Authorization": f"Bearer {token}",
         "Client-Id": os.environ.get("CLIENT_ID")
     }
-    print(headers)
     response = requests.get(HELIX_ENDPOINT + path, params=params, headers=headers)
     response.raise_for_status()
     data = response.json()["data"][0]
@@ -43,7 +42,7 @@ def is_user_online(channel: str, username: str) -> bool:
     response.raise_for_status()
     chat_info = response.json()["chatters"]
 
-    for _, v in chat_info:
+    for v in chat_info.values():
         found_idx = util.find_idx(v, username)
         if found_idx != -1:
             return True
