@@ -1,4 +1,7 @@
 import time
+from datetime import datetime
+
+from logzero import logger
 
 import slapyou
 import twitch
@@ -9,12 +12,14 @@ def lambda_handler(event: dict, context):
     if "warmup" in event:
         return
 
+    logger.info(f"current time is {datetime.utcnow()}Z")
+    logger.info(f"incoming event: {event}")
     response_url, channel_info, caller_info, target_name = get_operating_info(event)
 
     if target_name is None or target_name == "null":
         response_message = "A target was not specified"
         twitch.send_message(response_url, response_message)
-        return
+        return None
 
     caller_id = caller_info["providerId"]
     target_info = twitch.get_user_info(target_name)
@@ -22,15 +27,27 @@ def lambda_handler(event: dict, context):
     channel_id = channel_info["providerId"]
     channel_name = channel_info["name"]
 
-    if not twitch.is_user_online(channel_name, target_name):
+    logger.info(f"""{caller_info["displayName"]} is trying to slap {target_name})""")
+
+    if util.is_target_self(caller_id, target_id):
+        response_message = "ERROR: You cannot attempt to intentionally slap yourself PepeLaugh"
+        twitch.send_message(response_url, response_message)
+        return None
+    elif util.is_target_channel_owner(target_info, channel_info):
+        response_message = "ERROR: You cannot slap the streamer PepeLaugh"
+        twitch.send_message(response_url, response_message)
+        return None
+    elif not twitch.is_user_online(channel_name, target_name):
         response_message = f"User {target_name} is currently not in chat"
         twitch.send_message(response_url, response_message)
-        return
+        return None
 
     slap_result = slapyou.slap(caller_info, target_info, channel_id)
     for msg in slap_result:
         twitch.send_message(response_url, msg)
         time.sleep(5.5)
+
+    return None
 
 
 def get_operating_info(event: dict) -> (str, str, str, str):

@@ -17,6 +17,10 @@ def is_target_channel_owner(target_info: dict, channel_info: dict) -> bool:
     return target_info["providerId"] == channel_info["providerId"]
 
 
+def is_target_self(caller_id: str, target_id: str) -> bool:
+    return caller_id == target_id
+
+
 def get_access_token() -> str:
     lambda_client = boto3.client("lambda")
     env = os.environ.get("ENV")
