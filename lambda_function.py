@@ -3,7 +3,6 @@ import twitch
 import slapyou
 
 def lambda_handler(event: dict, context):
-    print(event)
     response_url, channel_info, caller_info, target_name = get_operating_info(event)
 
     if target_name is None:
@@ -27,8 +26,8 @@ def lambda_handler(event: dict, context):
 
 
 def get_operating_info(event: dict) -> (str, str, str, str):
-    response_url = event["headers"]["nightbot-response-url"]
-    channel_info = util.header_to_dict(event["headers"]["nightbot-channel"])
-    caller_info = util.header_to_dict(event["headers"]["nightbot-user"])
+    response_url = event["headers"]["Nightbot-Response-Url"]
+    channel_info = util.header_to_dict(event["headers"]["Nightbot-Channel"])
+    caller_info = util.header_to_dict(event["headers"]["Nightbot-User"])
     target = event["queryStringParameters"].get("target")
     return response_url, channel_info, caller_info, target
