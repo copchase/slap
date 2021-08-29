@@ -28,6 +28,7 @@ def slap(caller_info: dict, target_info: dict, channel_id: str) -> list:
     if roll(get_chance_from_currency(caller_currency)):
         target_obj = dynamodb_api.get_item(target_info)
         stolen_amount = steal(caller_obj, target_obj, channel_id, critical)
+        dynamodb_api.update_item(target_id, target_obj)
         if critical:
             output_str.append(f"""{caller_name} slaps {target_name} and critically hits, gaining {stolen_amount} {CURRENCY_NAME.get(channel_id, "EXP")} {emote.get_positive_emote()}!""")
         else:
@@ -36,17 +37,29 @@ def slap(caller_info: dict, target_info: dict, channel_id: str) -> list:
         output_str.append(f"""{caller_name} slaps themselves in confusion, losing all but one {CURRENCY_NAME.get(channel_id, "EXP")}! {emote.get_negative_emote()}""")
         set_user_currency(caller_obj, channel_id, 1)
     else:
-        loss_amount = steal(None, caller_obj, channel_id, False)
+        loss_amount = loss(caller_obj, channel_id)
         output_str.append(f"""{caller_name} fails to slap {target_name} and loses {loss_amount} {CURRENCY_NAME.get(channel_id, "EXP")}!""")
 
+    dynamodb_api.update_item(caller_id, caller_obj)
     return output_str
 
 
 def steal(caller_obj: dict, target_obj: dict, channel_id: str, critical: bool) -> int:
+    caller_currency = get_user_currency(caller_obj, channel_id)
     target_currency = get_user_currency(target_obj, channel_id)
     percentage = random.uniform(0.05 + critical * 0.245, 0.35 + critical * 0.35)
     stolen_amount = max(1, round(percentage * target_currency))
+    set_user_currency(caller_obj, caller_currency + stolen_amount)
+    set_user_currency(target_obj, target_currency - stolen_amount)
     return stolen_amount
+
+
+def loss(caller_obj: dict, channel_id: str) -> int:
+    caller_currency = get_user_currency(caller_obj, channel_id)
+    percentage = random.uniform(0.1, 0.4)
+    loss_amount = max(1, round(percentage * caller_currency))
+    set_user_currency(caller_obj, caller_currency - loss_amount)
+    return loss_amount
 
 
 def get_user_currency(user_obj: dict, channel_id: str) -> int:
