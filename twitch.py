@@ -1,6 +1,8 @@
+import json
+import os
+
 import requests
 from logzero import logger
-import json
 
 import util
 
@@ -12,7 +14,11 @@ def get_user_info(username: str) -> dict:
     path = "/users"
     token = util.get_access_token().strip("\"")
     params = {"login": username}
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Client-Id": os.environ.get("CLIENT_ID")
+    }
+    print(headers)
     response = requests.get(HELIX_ENDPOINT + path, params=params, headers=headers)
     response.raise_for_status()
     data = response.json()["data"]
