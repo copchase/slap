@@ -41,7 +41,7 @@ def slap(caller_info: dict, target_info: dict, channel_id: str) -> list:
         loss_amount = loss(caller_obj, channel_id)
         if loss_amount == 0:
             output_str.append(f"{caller_name} tripped and died trying to slap {target_name} {emote.get_negative_emote()}")
-            output_str.append(f"{caller_name} has respawned with 1 HP AngelThump . Try aiming better next time PepeLaugh")
+            output_str.append(f"{caller_name} has respawned with 1 HP AngelThump Try aiming better next time PepeLaugh")
         else:
             output_str.append(f"{caller_name} ({caller_currency}) fails to slap {target_name} and loses {loss_amount} HP")
 
