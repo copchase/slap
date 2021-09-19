@@ -14,16 +14,16 @@ SLAPYOU_TABLE = DDB_RESOURCE.Table(SLAPYOU_TABLE_NAME)
 
 
 def get_item(key: Any) -> dict:
-    result = SLAPYOU_TABLE.get_item(Key=key)
+    result = SLAPYOU_TABLE.get_item(Key={"userId": key})
     logger.info(f"DDB.GetItem response: {result}")
-    return result.get("Item", {})
+    return result.get("Item")
 
 
 def update_item(key: Any, attr: dict) -> bool:
     attr.pop("userId", None)
     update_exp, ean, eav = make_update_item_assets(attr)
     result = SLAPYOU_TABLE.update_item(
-        Key=key,
+        Key={"userId": key},
         UpdateExpression=update_exp,
         ExpressionAttributeNames=ean,
         ExpressionAttributeValues=eav,
