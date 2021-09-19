@@ -1,7 +1,9 @@
-import boto3
+import bisect
 import json
 import os
-import bisect
+
+import boto3
+
 
 def header_to_dict(header: str) -> dict:
     output = {}
@@ -20,6 +22,23 @@ def is_target_channel_owner(target_info: dict, channel_info: dict) -> bool:
 def is_target_self(caller_id: str, target_id: str) -> bool:
     return caller_id == target_id
 
+
+def is_target_bot(target_id: str) -> bool:
+    bot_set = set([
+        "anotherttvviewer",
+        "commanderroot",
+        "hnlbot",
+        "moobot",
+        "nightbot",
+        "phantombot"
+        "spireinfo",
+        "stay_hydrated_bot",
+        "streamelements",
+        "streamlabs",
+        "xanbot",
+    ])
+
+    return target_id.lower() in bot_set
 
 def get_access_token() -> str:
     lambda_client = boto3.client("lambda")

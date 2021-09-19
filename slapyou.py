@@ -1,5 +1,8 @@
-from typing import Union
 import random
+from typing import Union
+
+from logzero import logger
+
 import dynamodb_api
 import emote
 
@@ -20,7 +23,9 @@ def slap(caller_info: dict, target_info: dict, channel_id: str) -> list:
     caller_currency = get_user_currency(caller_obj, channel_id)
     critical = roll(0.0625)
 
+    logger.info(f"critical status is {critical}")
     if roll(get_chance_from_currency(caller_currency)):
+        logger.info("slap attempt successful")
         target_obj = dynamodb_api.get_item(target_id)
         target_currency = get_user_currency(target_obj, channel_id)
         stolen_amount, target_died = steal(caller_obj, target_obj, channel_id, critical)
@@ -87,12 +92,12 @@ def set_user_currency(user_obj: dict, channel_id: str, currency: int) -> None:
 
 
 def get_chance_from_currency(currency: int) -> float:
-    a = 0.333 # Increase to elevate rate of failure growth
-    # 0.333 means failure is close to 100% around 1 million currency
-    b = 0.0 # Increase to reduce fail rate for all people
+    a = 0.839 # Increase to elevate rate of failure growth
+    b = 27.0 # Increase to reduce fail rate for all people
     c = -20.0  # Increase to move function towards third quadrant
     # aka increases the "poor person threshold from 1 to 5"
-    d = 0.0  # Increase to give more fail chance for poor people
+    d = 590.0  # Increase to give more fail chance for poor people
+    # increase d to push inflection point towards +inf
     x = float(currency)
     chance = ((x**a - c) + (d / (x - c))) - b
     return 1 - (chance / 100)

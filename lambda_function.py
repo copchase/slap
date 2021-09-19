@@ -33,7 +33,7 @@ def lambda_handler(event: dict, context):
         twitch.send_message(response_url, response_message)
         return None
 
-    logger.info(f"""{caller_info["displayName"]} is trying to slap {target_name})""")
+    logger.info(f"""{caller_info["displayName"]} is trying to slap {target_name}""")
 
     if util.is_target_self(caller_id, target_id):
         response_message = "ERROR: You cannot attempt to intentionally slap yourself PepeLaugh"

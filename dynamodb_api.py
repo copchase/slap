@@ -2,6 +2,7 @@ import os
 from typing import Any
 
 import boto3
+from logzero import logger
 
 import twitch
 
@@ -9,6 +10,7 @@ DDB_CLIENT = boto3.client("dynamodb")
 DDB_TABLE = os.environ.get("SLAPYOU_TABLE")
 
 def get_item(key: Any) -> dict:
+    logger.info(f"attempting to get user {key}")
     key_dict = {"userId": convert_to_ddbav(key)}
     result = DDB_CLIENT.get_item(TableName=DDB_TABLE, Key=key_dict)
     ddbav_attr = result.get("Item", {})
@@ -21,7 +23,7 @@ def get_item(key: Any) -> dict:
 
 
 def update_item(key: Any, attributes: dict) -> bool:
-    counter = 1
+    logger.info(f"attempting to update user {key}")
     key_dict = {"userId": convert_to_ddbav(key)}
     attributes.pop("userId", "")
     attr_dict = {}
@@ -46,6 +48,10 @@ def update_item(key: Any, attributes: dict) -> bool:
 # EAN = Expression Attribute Names
 # EAV = Expression Attribute Values
 def make_update_item_assets(attributes: dict) -> (str, dict, dict):
+    if len(attributes) == 0:
+        logger.warn("UpdateItem was passed an empty attribute dict")
+        return None, None, None
+
     counter = 1
     exp_frag = []
     ean = {}
