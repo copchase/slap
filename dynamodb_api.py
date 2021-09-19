@@ -1,44 +1,34 @@
+from __future__ import annotations
+
 import os
-from typing import Any
+from typing import Any, Tuple
 
 import boto3
 from logzero import logger
 
 import twitch
 
-DDB_CLIENT = boto3.client("dynamodb")
-DDB_TABLE = os.environ.get("SLAPYOU_TABLE")
+DDB_RESOURCE = boto3.resource("dynamodb")
+SLAPYOU_TABLE_NAME = os.environ.get("SLAPYOU_TABLE")
+SLAPYOU_TABLE = DDB_RESOURCE.Table(SLAPYOU_TABLE_NAME)
+
 
 def get_item(key: Any) -> dict:
-    logger.info(f"attempting to get user {key}")
-    key_dict = {"userId": convert_to_ddbav(key)}
-    result = DDB_CLIENT.get_item(TableName=DDB_TABLE, Key=key_dict)
-    ddbav_attr = result.get("Item", {})
-    python_attr = {}
-
-    for key in ddbav_attr:
-        python_attr[key] = convert_from_ddbav(ddbav_attr[key])
-
-    return python_attr
+    result = SLAPYOU_TABLE.get_item(Key=key)
+    logger.info(f"DDB.GetItem response: {result}")
+    return result.get("Item", {})
 
 
-def update_item(key: Any, attributes: dict) -> bool:
-    logger.info(f"attempting to update user {key}")
-    key_dict = {"userId": convert_to_ddbav(key)}
-    attributes.pop("userId", "")
-    attr_dict = {}
-    for k in attributes:
-        attr_dict[k] = convert_to_ddbav(attributes[k])
-
-    update_exp, ean, eav = make_update_item_assets(attributes)
-    DDB_CLIENT.update_item(
-        TableName=DDB_TABLE,
-        Key=key_dict,
-        ReturnValues="NONE",
+def update_item(key: Any, attr: dict) -> bool:
+    attr.pop("userId", None)
+    update_exp, ean, eav = make_update_item_assets(attr)
+    result = SLAPYOU_TABLE.update_item(
+        Key=key,
         UpdateExpression=update_exp,
         ExpressionAttributeNames=ean,
-        ExpressionAttributeValues=eav
+        ExpressionAttributeValues=eav,
     )
+    logger.info(f"DDB.UpdateItem response: {result}")
 
 
 # UpdateItem requires explicit setting of attributes
@@ -47,64 +37,23 @@ def update_item(key: Any, attributes: dict) -> bool:
 # Returns of tuple of update expression, EAN, and EAV
 # EAN = Expression Attribute Names
 # EAV = Expression Attribute Values
-def make_update_item_assets(attributes: dict) -> (str, dict, dict):
+def make_update_item_assets(attributes: dict) -> Tuple[str, dict, dict]:
     if len(attributes) == 0:
         logger.warn("UpdateItem was passed an empty attribute dict")
-        return None, None, None
+        return "", {}, {}
 
     counter = 1
-    exp_frag = []
+    update_exp_frags = []
     ean = {}
     eav = {}
     for key in attributes:
         if type(key) != str:
             continue
 
-        exp_frag.append(f"#{counter} = :{counter}")
+        update_exp_frags.append(f"#{counter} = :{counter}")
         ean[f"#{counter}"] = key
-        eav[f":{counter}"] = convert_to_ddbav(attributes[key])
+        eav[f":{counter}"] = attributes[key]
         counter += 1
 
-    update_exp = ", ".join(exp_frag)
+    update_exp = ", ".join(update_exp_frags)
     return (f"SET {update_exp}", ean, eav)
-
-
-# Convert basic Python types to DynamoDB compatible types
-# Complex types should be broken down in their own modules
-# before coming here to be converted
-def convert_to_ddbav(object: Any) -> dict:
-    try:
-        key, conversion = TO_DDBAV_DICT[type(object)]
-        return {
-            key: conversion(object)
-        }
-    except KeyError:
-        raise RuntimeError(f"Attempted to convert complex Python type {type(object)} to DynamoDB type") from None
-
-
-def convert_from_ddbav(ddbav: dict) -> Any:
-    for key in ddbav:
-        conversion = FROM_DDBAV_DICT[key]
-        return conversion(ddbav[key])
-
-# Needs to be defined last because dictionary definitions require
-# that the values exist
-TO_DDBAV_DICT = {
-    **dict.fromkeys([int, float], ("N", str)),
-    **dict.fromkeys([bytes, bytearray], ("B", bytes)),
-    str: ("S", str),
-    dict: ("M", lambda x: {k: convert_to_ddbav(x[k]) for k in x}),
-    list: ("L", lambda x: [convert_to_ddbav(ele) for ele in x]),
-    type(None): ("NULL", lambda x: True),
-    bool: ("BOOL", bool)
-}
-
-FROM_DDBAV_DICT = {
-    "N": lambda x: float(x) if "." in x else int(x),
-    "B": bytes,
-    "S": str,
-    "M": lambda x: {k: convert_from_ddbav(x[k]) for k in x},
-    "L": lambda x: [convert_from_ddbav[ele] for ele in x],
-    "NULL": lambda x: None,
-    "BOOL": bool
-}
