@@ -32,17 +32,16 @@ def miss(slap_info: dict):
         # Critical miss means instant death
         compensation_percent = Decimal(os.environ("CRIT_MISS_COMP_PERCENT", "0.5"))
         caller_hp = slap_info["caller"]["ddb"]["currency"][slap_info["channelId"]]
-        compensation_for_target = (caller_hp * compensation_percent).to_integral_value(
+        compensation = (caller_hp * compensation_percent).to_integral_value(
             rounding=ROUND_HALF_DOWN
         )
-        slap_info["target"]["ddb"]["currency"][
-            slap_info["channelId"]
-        ] += compensation_for_target
-        revive(slap_info["caller"], slap_info["channelId"])
-
+        slap_info["target"]["ddb"]["currency"][slap_info["channelId"]] += compensation
+        revive_msg = revive(slap_info["caller"], slap_info["channelId"])
+        slap_info["output"].append(get_crit_miss_msg(slap_info, compensation))
+        slap_info["output"].append(revive_msg)
     else:
         # Should misses be gains for the target? Maybe add a feature flag?
-        pass
+        slap_info["output"].append(get_miss_msg(slap_info))
 
 
 def hit(slap_info: dict):
@@ -61,6 +60,7 @@ def is_crit():
 def revive(user_info: dict, channel_id: str):
     revive_hp = os.environ.get("REVIVE_HP", "10")
     user_info["currency"][channel_id] = Decimal(revive_hp)
+    return get_revive_msg(user_info["name"], revive_hp)
 
 
 def get_miss_msg(slap_info: dict) -> str:
