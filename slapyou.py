@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import random
 from typing import Union
 
@@ -54,16 +56,28 @@ def slap(caller_info: dict, target_info: dict, channel_id: str) -> list:
     return output_str
 
 
-def steal(caller_obj: dict, target_obj: dict, channel_id: str, critical: bool) -> (int, bool):
+def slap_success(caller_obj: dict, target_id: str, channel_id: str, output_str: list):
+    logger.debug("slap success")
+    target_obj = dynamodb_api.get_item(target_id)
+    target_currency = get_user_currency(target_obj, channel_id)
+
+    if roll_for_crit():
+        if roll_one_percent_crit():
+            slap_damage = 100 * target_currency * random.normalvariate
+    stolen_amount, target_died = steal(caller_obj, target_obj, channel_id, roll_for_crit())
+    dynamodb_api.update_item(target_id, target_obj)
+
+
+def steal(caller_obj: dict, target_obj: dict, channel_id: str, critical: bool):
     caller_currency = get_user_currency(caller_obj, channel_id)
     target_currency = get_user_currency(target_obj, channel_id)
-    percentage = random.uniform(0.05 + critical * 0.245, 0.35 + critical * 0.35)
+    percentage = random.uniform(1 + critical * 4, 5 + critical * 10)
     stolen_amount = max(1, round(percentage * target_currency))
     set_user_currency(caller_obj, channel_id, caller_currency + stolen_amount)
 
     target_died = target_currency - stolen_amount < 1
     if target_died:
-        set_user_currency(target_obj, channel_id, 1)
+        respawn_player(target_obj, channel_id)
     else:
         set_user_currency(target_obj, channel_id, target_currency - stolen_amount)
 
@@ -78,6 +92,11 @@ def loss(caller_obj: dict, channel_id: str) -> int:
     loss_amount = max(1, round(percentage * caller_currency))
     set_user_currency(caller_obj, channel_id, caller_currency - loss_amount)
     return loss_amount
+
+
+def respawn_player(user_obj: dict, channel_id: str) -> None:
+    initial_hp = 10
+    set_user_currency(user_obj, channel_id, initial_hp)
 
 
 def get_user_currency(user_obj: dict, channel_id: str) -> int:
@@ -105,3 +124,20 @@ def get_chance_from_currency(currency: int) -> float:
 
 def roll(chance: Union[float, str]) -> bool:
     return random.random() < chance
+
+
+def roll_for_crit() -> int:
+    return roll(0.0625)
+
+
+def roll_one_percent_crit() -> bool:
+    return roll(0.01)
+
+# slap_info should be like
+# {
+#   "caller": "123"
+#   "target": "456"
+#   "channel": "123"
+# }
+def slapyou_v2(slap_info: dict) -> list[str]:
+    return []
