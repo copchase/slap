@@ -20,11 +20,16 @@ def slap(slap_info: dict):
     slap_info["output"] = []
     slap_info["caller"]["ddb"] = dynamodb_api.get_item(slap_info["caller"]["id"])
     slap_info["target"]["ddb"] = dynamodb_api.get_item(slap_info["target"]["id"])
-
+    write_needed = True
     if is_miss():
-        miss(slap_info)
+        write_needed = miss(slap_info)
     else:
         hit(slap_info)
+
+    # Write to disk
+    if write_needed:
+        dynamodb_api.update_item(slap_info["caller"]["id"], slap_info["caller"]["ddb"])
+        dynamodb_api.update_item(slap_info["target"]["id"], slap_info["target"]["ddb"])
 
 
 def miss(slap_info: dict):
@@ -36,16 +41,37 @@ def miss(slap_info: dict):
             rounding=ROUND_HALF_DOWN
         )
         slap_info["target"]["ddb"]["currency"][slap_info["channelId"]] += compensation
-        revive_msg = revive(slap_info["caller"], slap_info["channelId"])
+        revive_msg = revive(slap_info["caller"]["ddb"], slap_info["channelId"])
         slap_info["output"].append(get_crit_miss_msg(slap_info, compensation))
         slap_info["output"].append(revive_msg)
+        return True
     else:
         # Should misses be gains for the target? Maybe add a feature flag?
         slap_info["output"].append(get_miss_msg(slap_info))
+        return False
 
 
 def hit(slap_info: dict):
-    pass
+    base_damage = get_base_damage()
+    caller_hp = slap_info["caller"]["ddb"]["currency"][slap_info["channelId"]]
+    target_hp = slap_info["target"]["ddb"]["currency"][slap_info["channelId"]]
+    damage = min(target_hp, base_damage)
+    if is_crit():
+        damage = min(target_hp, damage + get_crit_damage(slap_info))
+        slap_info["output"].append(get_crit_hit_msg(slap_info, damage))
+    else:
+        slap_info["output"].append(get_hit_msg(slap_info, damage))
+
+    caller_hp += damage
+    target_hp -= damage
+
+    if target_hp <= Decimal(0):
+        # target is dead
+        revive(slap_info["target"]["ddb"], slap_info["channelId"])
+
+    # Reassign on objects
+    slap_info["caller"]["ddb"]["currency"][slap_info["channelId"]] = caller_hp
+    slap_info["target"]["ddb"]["currency"][slap_info["channelId"]] = target_hp
 
 
 def is_miss():
@@ -121,3 +147,22 @@ def get_revive_msg(user_name: str, hp: str) -> str:
 
     template = random.choice(templates).format(user_name, hp)
     return template
+
+
+def get_base_damage() -> Decimal:
+    damage = random.randint(1, int(os.environ.get("REVIVE_HP", "10")))
+    return Decimal(damage)
+
+
+def get_crit_damage(slap_info: dict) -> Decimal:
+    min_crit_dmg_percent = float(os.environ.get("MIN_CRIT_DMG_PERCENT", "0.5"))
+    max_crit_dmg_percent = float(os.environ.get("MAX_CRIT_DMG_PERCENT", "0.75"))
+    crit_dmg_percent = Decimal(
+        random.uniform(min_crit_dmg_percent, max_crit_dmg_percent)
+    )
+    target_hp = slap_info["target"]["ddb"]["currency"][slap_info["channelId"]]
+    crit_dmg = (target_hp * crit_dmg_percent).to_integral_value(
+        rounding=ROUND_HALF_DOWN
+    )
+
+    return crit_dmg
