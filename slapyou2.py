@@ -81,7 +81,8 @@ def hit(slap_info: dict):
 
     if target_hp <= Decimal(0):
         # target is dead
-        revive(slap_info["target"], slap_info["channelId"])
+        revive_msg = revive(slap_info["target"], slap_info["channelId"])
+        slap_info["output"].append(revive_msg)
 
 
 def is_miss():
