@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import os
 import random
+from decimal import ROUND_HALF_DOWN, Decimal
 
 from logzero import logger
 
 import dynamodb_api
 import emote
-from decimal import Decimal, ROUND_HALF_DOWN
+
 
 # slap_info
 # caller
@@ -34,7 +35,7 @@ def slap(slap_info: dict):
 def miss(slap_info: dict):
     if is_crit():
         # Critical miss means instant death
-        compensation_percent = Decimal(os.environ("CRIT_MISS_COMP_PERCENT", "0.5"))
+        compensation_percent = Decimal(os.environ.get("CRIT_MISS_COMP_PERCENT", "0.5"))
         caller_hp = slap_info["caller"]["ddb"]["currency"][slap_info["channelId"]]
         compensation = (caller_hp * compensation_percent).to_integral_value(
             rounding=ROUND_HALF_DOWN
@@ -64,13 +65,14 @@ def hit(slap_info: dict):
     caller_hp += damage
     target_hp -= damage
 
+    # Reassign on objects
+    slap_info["caller"]["ddb"]["currency"][slap_info["channelId"]] = caller_hp
+    slap_info["target"]["ddb"]["currency"][slap_info["channelId"]] = target_hp
+
     if target_hp <= Decimal(0):
         # target is dead
         revive(slap_info["target"], slap_info["channelId"])
 
-    # Reassign on objects
-    slap_info["caller"]["ddb"]["currency"][slap_info["channelId"]] = caller_hp
-    slap_info["target"]["ddb"]["currency"][slap_info["channelId"]] = target_hp
 
 
 def is_miss():

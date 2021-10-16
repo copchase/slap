@@ -1,13 +1,14 @@
 import json
-from decimal import Decimal
 import os
+from decimal import Decimal
+
 import pytest
 from logzero import logger
 
 import slapyou2
 
 START_HP = Decimal(os.environ.get("REVIVE_HP", "10"))
-
+ZERO_HP = Decimal(0)
 
 @pytest.fixture
 def test_data():
@@ -43,21 +44,47 @@ def test_data():
     return sample_slap_info
 
 
-def test_hit(test_data):
+def test_hit(mocker, test_data):
+    mocker.patch("slapyou2.is_crit", return_value=False)
+
     slapyou2.hit(test_data)
+
     caller_hp, target_hp = get_hp_helper(test_data)
     assert caller_hp > START_HP
-    assert target_hp < START_HP
-    assert (caller_hp + target_hp) == 2 * START_HP
+    assert target_hp > ZERO_HP
+
+
+def test_crit_hit(mocker, test_data):
+    mocker.patch("slapyou2.is_crit", return_value=True)
+    min_crit_dmg_percent = Decimal(os.environ.get("MIN_CRIT_DMG_PERCENT", "0.5"))
+
+    slapyou2.hit(test_data)
+
+    caller_hp, target_hp = get_hp_helper(test_data)
+    assert caller_hp >= START_HP + Decimal(1) + (START_HP * min_crit_dmg_percent)
+    assert target_hp > ZERO_HP
 
 
 def test_miss(mocker, test_data):
     mocker.patch("slapyou2.is_crit", return_value=False)
+
     slapyou2.miss(test_data)
+
     caller_hp, target_hp = get_hp_helper(test_data)
     assert caller_hp == START_HP
     assert target_hp == START_HP
-    assert (caller_hp + target_hp) == 2 * START_HP
+
+
+def test_crit_miss(mocker, test_data):
+    mocker.patch("slapyou2.is_crit", return_value=True)
+    crit_miss_comp_percent = Decimal(os.environ.get("CRIT_MISS_COMP_PERCENT", "0.5"))
+
+    slapyou2.miss(test_data)
+
+    caller_hp, target_hp = get_hp_helper(test_data)
+    assert caller_hp == START_HP
+    assert target_hp == START_HP + (crit_miss_comp_percent * START_HP)
+    assert (caller_hp + target_hp) > 2 * START_HP
 
 
 def get_hp_helper(data):
