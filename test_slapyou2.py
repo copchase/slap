@@ -1,44 +1,25 @@
-import json
 import os
 from decimal import Decimal
 
 import pytest
-from logzero import logger
 
 import slapyou2
 
 START_HP = Decimal(os.environ.get("REVIVE_HP", "10"))
 ZERO_HP = Decimal(0)
 
+
 @pytest.fixture
 def test_data():
-    sample_caller_ddb = {
-    "userId": "callerId",
-    "currency": {
-        "channelId": Decimal(10)
-    }
-}
+    sample_caller_ddb = {"userId": "callerId", "currency": {"channelId": Decimal(10)}}
 
-    sample_target_ddb = {
-        "userId": "targetId",
-        "currency": {
-            "channelId": Decimal(10)
-        }
-    }
+    sample_target_ddb = {"userId": "targetId", "currency": {"channelId": Decimal(10)}}
 
     sample_slap_info = {
-        "caller": {
-            "name": "callerName",
-            "id": "callerId",
-            "ddb": sample_caller_ddb
-        },
-        "target": {
-            "name": "targetName",
-            "id": "targetId",
-            "ddb": sample_target_ddb
-        },
+        "caller": {"name": "callerName", "id": "callerId", "ddb": sample_caller_ddb},
+        "target": {"name": "targetName", "id": "targetId", "ddb": sample_target_ddb},
         "channelId": "channelId",
-        "output": []
+        "output": [],
     }
 
     return sample_slap_info

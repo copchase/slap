@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 
 import os
 import random
@@ -18,8 +19,12 @@ import emote
 # channelId
 def slap(slap_info: dict):
     # Read in DDB objects, quick GetItem actions
+    logger.info(
+        f"incoming slap event: {json.dumps(slap_info, default=json_dumps_helper)}"
+    )
     slap_info["caller"]["ddb"] = dynamodb_api.get_item(slap_info["caller"]["id"])
     slap_info["target"]["ddb"] = dynamodb_api.get_item(slap_info["target"]["id"])
+    logger.debug("read from ddb")
     write_needed = True
     if is_miss():
         write_needed = miss(slap_info)
@@ -30,6 +35,11 @@ def slap(slap_info: dict):
     if write_needed:
         dynamodb_api.update_item(slap_info["caller"]["id"], slap_info["caller"]["ddb"])
         dynamodb_api.update_item(slap_info["target"]["id"], slap_info["target"]["ddb"])
+        logger.debug("wrote to ddb")
+
+    logger.info(
+        f"Slap event completed: {json.dumps(slap_info, default=json_dumps_helper)}"
+    )
 
 
 def miss(slap_info: dict):
@@ -72,7 +82,6 @@ def hit(slap_info: dict):
     if target_hp <= Decimal(0):
         # target is dead
         revive(slap_info["target"], slap_info["channelId"])
-
 
 
 def is_miss():
@@ -167,3 +176,10 @@ def get_crit_damage(slap_info: dict) -> Decimal:
     )
 
     return crit_dmg
+
+
+def json_dumps_helper(x):
+    if isinstance(x, Decimal):
+        return str(x)
+
+    raise TypeError(f"Object of type {type(x)} is not JSON serializable")
