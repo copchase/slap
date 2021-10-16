@@ -8,9 +8,15 @@ from logzero import logger
 
 import twitch
 
-DDB_RESOURCE = boto3.resource("dynamodb")
-SLAPYOU_TABLE_NAME = os.environ.get("SLAPYOU_TABLE")
-SLAPYOU_TABLE = DDB_RESOURCE.Table(SLAPYOU_TABLE_NAME)
+
+DDB_RESOURCE = None
+SLAPYOU_TABLE_NAME = None
+SLAPYOU_TABLE = None
+
+if os.environ.get("ENV", "local").lower() != "local":
+    DDB_RESOURCE = boto3.resource("dynamodb")
+    SLAPYOU_TABLE_NAME = os.environ.get("SLAPYOU_TABLE")
+    SLAPYOU_TABLE = DDB_RESOURCE.Table(SLAPYOU_TABLE_NAME)
 
 
 def get_item(key: Any) -> dict:

@@ -17,7 +17,6 @@ from decimal import Decimal, ROUND_HALF_DOWN
 # channelId
 def slap(slap_info: dict):
     # Read in DDB objects, quick GetItem actions
-    slap_info["output"] = []
     slap_info["caller"]["ddb"] = dynamodb_api.get_item(slap_info["caller"]["id"])
     slap_info["target"]["ddb"] = dynamodb_api.get_item(slap_info["target"]["id"])
     write_needed = True
@@ -41,7 +40,7 @@ def miss(slap_info: dict):
             rounding=ROUND_HALF_DOWN
         )
         slap_info["target"]["ddb"]["currency"][slap_info["channelId"]] += compensation
-        revive_msg = revive(slap_info["caller"]["ddb"], slap_info["channelId"])
+        revive_msg = revive(slap_info["caller"], slap_info["channelId"])
         slap_info["output"].append(get_crit_miss_msg(slap_info, compensation))
         slap_info["output"].append(revive_msg)
         return True
@@ -67,7 +66,7 @@ def hit(slap_info: dict):
 
     if target_hp <= Decimal(0):
         # target is dead
-        revive(slap_info["target"]["ddb"], slap_info["channelId"])
+        revive(slap_info["target"], slap_info["channelId"])
 
     # Reassign on objects
     slap_info["caller"]["ddb"]["currency"][slap_info["channelId"]] = caller_hp
@@ -85,7 +84,7 @@ def is_crit():
 # User refers to caller or target
 def revive(user_info: dict, channel_id: str):
     revive_hp = os.environ.get("REVIVE_HP", "10")
-    user_info["currency"][channel_id] = Decimal(revive_hp)
+    user_info["ddb"]["currency"][channel_id] = Decimal(revive_hp)
     return get_revive_msg(user_info["name"], revive_hp)
 
 
