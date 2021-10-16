@@ -25,6 +25,40 @@ def test_data():
     return sample_slap_info
 
 
+def test_slap_new_players(mocker, test_data):
+    mocker.patch("dynamodb_api.get_item", return_value=None)
+    mocker.patch("dynamodb_api.update_item")
+    test_data["caller"].pop("ddb", None)
+    test_data["target"].pop("ddb", None)
+
+    slapyou2.slap(test_data)
+
+    assert test_data["caller"]["ddb"] is not None
+    assert test_data["target"]["ddb"] is not None
+
+
+def test_slap_new_caller(mocker, test_data):
+    mocker.patch("dynamodb_api.get_item", return_value=None)
+    mocker.patch("dynamodb_api.update_item")
+    test_data["caller"].pop("ddb", None)
+
+    slapyou2.slap(test_data)
+
+    assert test_data["caller"]["ddb"] is not None
+    assert test_data["target"]["ddb"] is not None
+
+
+def test_slap_new_target(mocker, test_data):
+    mocker.patch("dynamodb_api.get_item", return_value=None)
+    mocker.patch("dynamodb_api.update_item")
+    test_data["target"].pop("ddb", None)
+
+    slapyou2.slap(test_data)
+
+    assert test_data["caller"]["ddb"] is not None
+    assert test_data["target"]["ddb"] is not None
+
+
 def test_hit(mocker, test_data):
     mocker.patch("slapyou2.is_crit", return_value=False)
 

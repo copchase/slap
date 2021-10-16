@@ -22,8 +22,13 @@ def slap(slap_info: dict):
     logger.info(
         f"incoming slap event: {json.dumps(slap_info, default=json_dumps_helper)}"
     )
+    channel_id = slap_info["channelId"]
     slap_info["caller"]["ddb"] = dynamodb_api.get_item(slap_info["caller"]["id"])
     slap_info["target"]["ddb"] = dynamodb_api.get_item(slap_info["target"]["id"])
+    if is_new_player(slap_info["caller"], channel_id):
+        revive(slap_info["caller"], channel_id)
+    if is_new_player(slap_info["target"], channel_id):
+        revive(slap_info["target"], channel_id)
     logger.debug("read from ddb")
     write_needed = True
     if is_miss():
@@ -96,7 +101,11 @@ def is_crit():
 # User refers to caller or target
 def revive(user_info: dict, channel_id: str):
     revive_hp = os.environ.get("REVIVE_HP", "10")
-    user_info["ddb"]["currency"][channel_id] = Decimal(revive_hp)
+    ddb_obj = user_info["ddb"] or {} # In case ddb is NoneType
+    currency_dict = ddb_obj.get("currency", {})
+    currency_dict[channel_id] = Decimal(revive_hp)
+    ddb_obj["currency"] = currency_dict
+    user_info["ddb"] = ddb_obj
     return get_revive_msg(user_info["name"], revive_hp)
 
 
@@ -177,6 +186,10 @@ def get_crit_damage(slap_info: dict) -> Decimal:
     )
 
     return crit_dmg
+
+
+def is_new_player(user_info: dict, channel_id: str) -> bool:
+    return user_info["ddb"] is None or channel_id not in user_info["ddb"]["currency"]
 
 
 def json_dumps_helper(x):
