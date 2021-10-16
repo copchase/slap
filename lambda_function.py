@@ -5,7 +5,7 @@ from datetime import datetime
 
 from logzero import logger
 
-import slapyou
+import slapyou2
 import twitch
 import util
 
@@ -50,16 +50,30 @@ def lambda_handler(event: dict, context):
         twitch.send_message(response_url, response_message)
         return None
 
-    slap_result = slapyou.slap(caller_info, target_info, channel_id)
-    while len(slap_result) > 0:
-        msg = slap_result.pop(0)
+    slap_info = {
+        "caller": {
+            "id": caller_id,
+            "name": caller_info["displayName"]
+        },
+        "target": {
+            "id": target_id,
+            "name": target_info["displayName"]
+        },
+        "channelId": channel_id,
+        "output": []
+    }
+
+    slapyou2.slap(slap_info)
+    msgs_to_send = slap_info["output"]
+    while len(msgs_to_send) > 0:
+        msg = msgs_to_send.pop(0)
         twitch.send_message(response_url, msg)
         time.sleep(5.5)
 
     return None
 
 
-def get_operating_info(event: dict) -> (str, str, str, str):
+def get_operating_info(event: dict) -> tuple[str, str, str, str]:
     response_url = event["headers"]["Nightbot-Response-Url"]
     channel_info = util.header_to_dict(event["headers"]["Nightbot-Channel"])
     caller_info = util.header_to_dict(event["headers"]["Nightbot-User"])
