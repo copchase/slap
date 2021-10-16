@@ -55,9 +55,9 @@ def miss(slap_info: dict):
         compensation = (caller_hp * compensation_percent).to_integral_value(
             rounding=ROUND_HALF_DOWN
         )
+        slap_info["output"].append(get_crit_miss_msg(slap_info, compensation))
         slap_info["target"]["ddb"]["currency"][slap_info["channelId"]] += compensation
         revive_msg = revive(slap_info["caller"], slap_info["channelId"])
-        slap_info["output"].append(get_crit_miss_msg(slap_info, compensation))
         slap_info["output"].append(revive_msg)
         return True
     else:
