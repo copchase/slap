@@ -48,7 +48,7 @@ def slap(slap_info: dict):
 
 
 def miss(slap_info: dict):
-    if is_crit():
+    if is_crit_miss():
         # Critical miss means instant death
         compensation_percent = Decimal(os.environ.get("CRIT_MISS_COMP_PERCENT", "0.5"))
         caller_hp = slap_info["caller"]["ddb"]["currency"][slap_info["channelId"]]
@@ -71,7 +71,7 @@ def hit(slap_info: dict):
     caller_hp = slap_info["caller"]["ddb"]["currency"][slap_info["channelId"]]
     target_hp = slap_info["target"]["ddb"]["currency"][slap_info["channelId"]]
     damage = min(target_hp, base_damage)
-    if is_crit():
+    if is_crit_hit():
         damage = min(target_hp, damage + get_crit_damage(slap_info))
         slap_info["output"].append(get_crit_hit_msg(slap_info, damage))
     else:
@@ -98,10 +98,18 @@ def is_crit():
     return random.random() <= float(os.environ.get("CRIT_CHANCE", "0.0625"))
 
 
+def is_crit_miss():
+    return random.random() <= float(os.environ.get("MISS_CRIT_CHANCE", "0.25"))
+
+
+def is_crit_hit():
+    return random.random() <= float(os.environ.get("HIT_CRIT_CHANCE", "0.1"))
+
+
 # User refers to caller or target
 def revive(user_info: dict, channel_id: str):
     revive_hp = os.environ.get("REVIVE_HP", "10")
-    ddb_obj = user_info["ddb"] or {} # In case ddb is NoneType
+    ddb_obj = user_info["ddb"] or {}  # In case ddb is NoneType
     currency_dict = ddb_obj.get("currency", {})
     currency_dict[channel_id] = Decimal(revive_hp)
     ddb_obj["currency"] = currency_dict
