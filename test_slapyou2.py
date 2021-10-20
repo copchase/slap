@@ -60,7 +60,7 @@ def test_slap_new_target(mocker, test_data):
 
 
 def test_hit(mocker, test_data):
-    mocker.patch("slapyou2.is_crit", return_value=False)
+    mocker.patch("slapyou2.is_crit_hit", return_value=False)
 
     slapyou2.hit(test_data)
 
@@ -70,7 +70,7 @@ def test_hit(mocker, test_data):
 
 
 def test_crit_hit(mocker, test_data):
-    mocker.patch("slapyou2.is_crit", return_value=True)
+    mocker.patch("slapyou2.is_crit_hit", return_value=True)
     min_crit_dmg_percent = Decimal(os.environ.get("MIN_CRIT_DMG_PERCENT", "0.5"))
 
     slapyou2.hit(test_data)
@@ -81,7 +81,7 @@ def test_crit_hit(mocker, test_data):
 
 
 def test_miss(mocker, test_data):
-    mocker.patch("slapyou2.is_crit", return_value=False)
+    mocker.patch("slapyou2.is_crit_miss", return_value=False)
 
     slapyou2.miss(test_data)
 
@@ -91,7 +91,7 @@ def test_miss(mocker, test_data):
 
 
 def test_crit_miss(mocker, test_data):
-    mocker.patch("slapyou2.is_crit", return_value=True)
+    mocker.patch("slapyou2.is_crit_miss", return_value=True)
     crit_miss_comp_percent = Decimal(os.environ.get("CRIT_MISS_COMP_PERCENT", "0.5"))
 
     slapyou2.miss(test_data)
