@@ -7,6 +7,7 @@ from logzero import logger
 
 import slapyou2
 import twitch
+import user_status
 import util
 
 
@@ -24,10 +25,24 @@ def lambda_handler(event: dict, context):
         return None
 
     caller_id = caller_info["providerId"]
-    target_info = twitch.get_user_info(target_name)
+    user_online = False
+    channel_name = channel_info["name"]
+    target_info = user_status.get_user_info(channel_name, target_name)
     target_id = target_info["providerId"]
     channel_id = channel_info["providerId"]
-    channel_name = channel_info["name"]
+
+    if target_info is None:
+        target_info = twitch.get_user_info(target_name)
+        user_online = twitch.is_user_online(channel_name, target_name)
+    else:
+        user_online = target_info["online"]
+
+
+    if not user_online:
+        response_message = f"User {target_name} is currently not in chat"
+        twitch.send_message(response_url, response_message)
+        return None
+
 
     target_name = target_name.lower()
     if target_name == "nightbot" and caller_info["userLevel"] != "owner":
@@ -38,29 +53,21 @@ def lambda_handler(event: dict, context):
     logger.info(f"""{caller_info["displayName"]} is trying to slap {target_name}""")
 
     if util.is_target_self(caller_id, target_id):
-        response_message = "ERROR: You cannot attempt to intentionally slap yourself PepeLaugh"
+        response_message = (
+            "ERROR: You cannot attempt to intentionally slap yourself PepeLaugh"
+        )
         twitch.send_message(response_url, response_message)
         return None
     elif util.is_target_channel_owner(target_info, channel_info):
         response_message = "ERROR: You cannot slap the streamer PepeLaugh"
         twitch.send_message(response_url, response_message)
         return None
-    elif not twitch.is_user_online(channel_name, target_name):
-        response_message = f"User {target_name} is currently not in chat"
-        twitch.send_message(response_url, response_message)
-        return None
 
     slap_info = {
-        "caller": {
-            "id": caller_id,
-            "name": caller_info["displayName"]
-        },
-        "target": {
-            "id": target_id,
-            "name": target_info["displayName"]
-        },
+        "caller": {"id": caller_id, "name": caller_info["displayName"]},
+        "target": {"id": target_id, "name": target_info["displayName"]},
         "channelId": channel_id,
-        "output": []
+        "output": [],
     }
 
     slapyou2.slap(slap_info)
