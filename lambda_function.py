@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import string
 import time
 from datetime import datetime
 
@@ -24,6 +25,7 @@ def lambda_handler(event: dict, context):
         twitch.send_message(response_url, response_message)
         return None
 
+    target_name = target_name.strip(f"{string.whitespace}@,")
     caller_id = caller_info["providerId"]
     user_online = False
     channel_name = channel_info["name"]
@@ -37,12 +39,10 @@ def lambda_handler(event: dict, context):
     else:
         user_online = target_info["online"]
 
-
     if not user_online:
         response_message = f"User {target_name} is currently not in chat"
         twitch.send_message(response_url, response_message)
         return None
-
 
     target_name = target_name.lower()
     if target_name == "nightbot" and caller_info["userLevel"] != "owner":
