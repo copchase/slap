@@ -41,7 +41,7 @@ def lambda_handler(event: dict, context):
         user_online = target_info["online"]
 
     if not user_online:
-        response_message = f"User {target_name} is currently not in chat"
+        response_message = f"User {target_name} has not chatted recently and so cannot be targeted"
         twitch.send_message(response_url, response_message)
         return None
 
