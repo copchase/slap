@@ -3,6 +3,7 @@ from __future__ import annotations
 import string
 import time
 from datetime import datetime
+from urllib.parse import unquote
 
 from logzero import logger
 
@@ -64,7 +65,7 @@ def lambda_handler(event: dict, context):
         return None
 
     slap_info = {
-        "caller": {"id": caller_id, "name": caller_info["displayName"]},
+        "caller": {"id": caller_id, "name": unquote(caller_info["displayName"])},
         "target": {"id": target_id, "name": target_info["displayName"]},
         "channelId": channel_id,
         "output": [],
